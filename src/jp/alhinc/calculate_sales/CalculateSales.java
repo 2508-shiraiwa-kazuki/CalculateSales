@@ -4,11 +4,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CalculateSales {
-
+		//以下定数
 	// 支店定義ファイル名
 	private static final String FILE_NAME_BRANCH_LST = "branch.lst";
 
@@ -37,7 +39,39 @@ public class CalculateSales {
 		}
 
 		// ※ここから集計処理を作成してください。(処理内容2-1、2-2)
+		String path = "C:\\Users\\trainee1384\\Desktop\\売り上げ集計課題";
+		File[] files = new File(path).listFiles();
+		List<File> rcdFiles = new ArrayList<>();
 
+		for(int i = 0; i < files.length; i++) {
+			if(files[i].getName().matches("^[0-9]{8}" + ".rcd")) {
+				rcdFiles.add(files[i]);
+			}
+		}
+
+		BufferedReader br = null;
+		//
+		for(int i = 0; i < rcdFiles.size(); i++) {
+			try {
+				//配列[]→[i]で指定、 List→.get()で指定
+
+				//(1)
+				//File file = new File(path,rcdFiles.get(i).getName());
+				//FileReader fr = new FileReader(file));
+				//(2)
+				//FileReader fr = new FileReader(rcdFiles.get(i));
+
+				//(1)(2)は同じ結果になる
+
+				FileReader fr = new FileReader(rcdFiles.get(i));
+				br = new BufferedReader(fr);
+
+				String line;
+				while((line = br.readLine()) != null) {
+
+				}
+			}
+		}
 
 
 		// 支店別集計ファイル書き込み処理
@@ -68,7 +102,10 @@ public class CalculateSales {
 			// 一行ずつ読み込む
 			while((line = br.readLine()) != null) {
 				// ※ここの読み込み処理を変更してください。(処理内容1-2)
-				System.out.println(line);
+				String[] items = line.split(",");
+
+				branchNames.put(items[0],items[1]);
+				branchSales.put(items[0],0L);
 			}
 
 		} catch(IOException e) {
