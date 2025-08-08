@@ -1,8 +1,12 @@
 package jp.alhinc.calculate_sales;
 
 import java.io.BufferedReader;
+//BufferedWriterをimportした
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+//FileWriterをimportした
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,36 +43,51 @@ public class CalculateSales {
 		}
 
 		// ※ここから集計処理を作成してください。(処理内容2-1、2-2)
-		String path = "C:\\Users\\trainee1384\\Desktop\\売り上げ集計課題";
-		File[] files = new File(path).listFiles();
+		File[] files = new File("C:\\Users\\trainee1384\\Desktop\\売り上げ集計課題").listFiles();
 		List<File> rcdFiles = new ArrayList<>();
 
+		//ファイル名のチェック機能（「数字8桁.rcd」になっているか）
 		for(int i = 0; i < files.length; i++) {
 			if(files[i].getName().matches("^[0-9]{8}" + ".rcd")) {
 				rcdFiles.add(files[i]);
 			}
 		}
 
+		//BufferedReaderの初期化
 		BufferedReader br = null;
-		//
+
+		//rcdFilesの要素の読込機能
 		for(int i = 0; i < rcdFiles.size(); i++) {
+
 			try {
-				//配列[]→[i]で指定、 List→.get()で指定
+				FileReader fr = new FileReader(rcdFiles.get(i));	//rcdFilesはリストなので.get()
+				br = new BufferedReader(fr);	//初期化時にBufferedReader brとしているのでここではbrのみ
 
-				//(1)
-				//File file = new File(path,rcdFiles.get(i).getName());
-				//FileReader fr = new FileReader(file));
-				//(2)
-				//FileReader fr = new FileReader(rcdFiles.get(i));
-
-				//(1)(2)は同じ結果になる
-
-				FileReader fr = new FileReader(rcdFiles.get(i));
-				br = new BufferedReader(fr);
-
+				List<String> storeSale = new ArrayList<>();
 				String line;
-				while((line = br.readLine()) != null) {
+				while((line = br.readLine()) != null) {		//rcdFilesのすべての行をreadLineするまで繰り返し
+					storeSale.add(line);
+					//読み込んだ内容をListに追加していく
+					}
+				//String型の売上金額をLong型に変換
+				long fileSale = Long.parseLong(storeSale.get(1));
+				//branchSalesに保持されている売上金額に合計する
+				Long saleAmount = branchSales.get(storeSale.get(0)) + fileSale;
+				branchSales.put(storeSale.get(0),saleAmount);
 
+				//以下は確認用（実装時はいらないかも？
+				System.out.println(line);
+			}catch(IOException e) {
+				System.out.println("UNKNOWN ERROR");
+				return;
+			}finally {
+				if(br != null) {
+					try {
+						br.close();
+					}catch(IOException e) {
+						System.out.println("UNKNOWN ERROR");
+						return;
+					}
 				}
 			}
 		}
@@ -106,6 +125,8 @@ public class CalculateSales {
 
 				branchNames.put(items[0],items[1]);
 				branchSales.put(items[0],0L);
+
+				System.out.println(line);
 			}
 
 		} catch(IOException e) {
@@ -137,7 +158,38 @@ public class CalculateSales {
 	 */
 	private static boolean writeFile(String path, String fileName, Map<String, String> branchNames, Map<String, Long> branchSales) {
 		// ※ここに書き込み処理を作成してください。(処理内容3-1)
+		BufferedWriter bw = null;
+		//keyの数の分だけ以下の処理を繰り返す
+		try {
+			File file = new File(path,fileName);
+			FileWriter fw = new FileWriter(file);
+			bw = new BufferedWriter(fw);
 
+			for(String key : branchNames.keySet()) {
+				//Long型の売上金額をString型に変換
+				//String p = String.valueOf(変化させる数値);
+				String saleAmount = String.valueOf(branchSales.get(key));
+				bw.write(key);
+				bw.write(branchNames.get(key));
+				bw.write(saleAmount);
+				//改行
+				bw.newLine();
+			}
+			//出力されるファイルはBRANCH_OUTのみなので、for文の後に書き込みを停止
+			bw.close();
+		}catch(IOException e) {
+				System.out.println(UNKNOWN_ERROR);
+				return false;
+		}finally {
+			if(bw != null) {
+				try {
+					bw.close();
+				}catch(IOException e) {
+					System.out.println(UNKNOWN_ERROR);
+					return false;
+				}
+			}
+		}
 		return true;
 	}
 
