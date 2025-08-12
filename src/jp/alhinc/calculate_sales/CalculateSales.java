@@ -37,6 +37,12 @@ public class CalculateSales {
 		// 支店コードと売上金額を保持するMap
 		Map<String, Long> branchSales = new HashMap<>();
 
+		//エラー処理3-1
+		if(args.length != 1) {
+			System.out.println(UNKNOWN_ERROR);
+			return;
+		}
+
 		// 支店定義ファイル読み込み処理　※エラーが出たら実行しない
 		if(!readFile(args[0], FILE_NAME_BRANCH_LST, branchNames, branchSales)) {
 			return;
@@ -55,6 +61,16 @@ public class CalculateSales {
 			//正規表現式を参照
 			if(files[i].getName().matches("^[0-9]{8}[.]rcd$" )) {
 				rcdFiles.add(files[i]);
+			}
+		}
+
+		//エラー処理2-1
+		for(int j = 0; j < rcdFiles.size() - 1; j++) {
+			int former = Integer.parseInt(rcdFiles.get(j).getName().substring(0, 8));
+			int latter = Integer.parseInt(rcdFiles.get(j + 1).getName().substring(0, 8));
+			if((latter - former) != 1) {
+				System.out.println("売上ファイル名が連番になっていません");
+				return;
 			}
 		}
 
@@ -80,13 +96,38 @@ public class CalculateSales {
 					//読み取った内容をstoreSale(List<String>)に追加していく
 					storeSale.add(line);
 				}
+
+				//エラー処理2-4
+				if(storeSale.size() != 2) {
+					System.out.println(rcdFiles.get(i).getName() + "のフォーマットが不正です");
+					return;
+				}
+
+				//エラー処理3-2
+				if(!storeSale.get(1).matches("^[0-9]*$")) {
+					System.out.println(UNKNOWN_ERROR);
+					return;
+				}
+
 				//String型の売上金額をLong型に変換
 				long fileSale = Long.parseLong(storeSale.get(1));
+
+				//エラー処理2-3
+				if(!branchSales.containsKey(storeSale.get(0))){
+					System.out.println(rcdFiles.get(i).getName() + "の支店コードが不正です");
+					return;
+				}
 
 				//branchSalesに保持されている売上金額に合計する
 				//合計を保存するためのsaleAmountを作成し、計算式を代入
 				//branchSales.get(storeSale.get(0))は、storeSale.get(0)で得た支店コードをbranchSalesのkeyとして使用している
 				Long saleAmount = branchSales.get(storeSale.get(0)) + fileSale;
+
+				//エラー処理2-2
+				if(saleAmount >= 10000000000L) {
+					System.out.println("合計金額が10桁を越えました");
+					return;
+				}
 				//storeSaleで得た支店コード(key)に紐づくvalueを更新する
 				branchSales.put(storeSale.get(0), saleAmount);
 
@@ -126,9 +167,9 @@ public class CalculateSales {
 	 */
 	private static boolean readFile(String path, String fileName, Map<String, String> branchNames, Map<String, Long> branchSales) {
 		BufferedReader br = null;
+		File file = new File(path, fileName);
 
 		try {
-			File file = new File(path, fileName);
 			FileReader fr = new FileReader(file);
 			br = new BufferedReader(fr);
 
@@ -139,12 +180,24 @@ public class CalculateSales {
 				//lineに代入される文字列を「,」で
 				String[] items = line.split(",");
 
-				branchNames.put(items[0], items[1]);
-				branchSales.put(items[0], 0L);
+				//エラー処理1-2
+				if((items.length != 2) || (!items[0].matches("^[0-9]{3}$"))) {
+					System.out.println(FILE_INVALID_FORMAT);
+					return false;
+				} else {
+					branchNames.put(items[0], items[1]);
+					branchSales.put(items[0], 0L);
+				}
 			}
 
 		} catch(IOException e) {
+
+			//エラー処理1-1
+			if(!file.exists()) {
+				System.out.println(FILE_NOT_EXIST);
+			} else {
 			System.out.println(UNKNOWN_ERROR);
+			}
 			return false;
 
 		} finally {
