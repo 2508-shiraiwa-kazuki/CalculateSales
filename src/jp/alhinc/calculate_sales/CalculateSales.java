@@ -75,11 +75,10 @@ public class CalculateSales {
 				Long saleAmount = branchSales.get(storeSale.get(0)) + fileSale;
 				branchSales.put(storeSale.get(0),saleAmount);
 
-				//以下は確認用（実装時はいらないかも？
-				System.out.println(line);
 			}catch(IOException e) {
 				System.out.println("UNKNOWN ERROR");
 				return;
+
 			}finally {
 				if(br != null) {
 					try {
@@ -169,13 +168,13 @@ public class CalculateSales {
 				//Long型の売上金額をString型に変換
 				//String p = String.valueOf(変化させる数値);
 				String saleAmount = String.valueOf(branchSales.get(key));
-				bw.write(key);
-				bw.write(branchNames.get(key));
-				bw.write(saleAmount);
+				//実際にファイルに出力する形式を設定
+				//支店コード、支店名、合計金額をカンマ区切りで出力、支店ごとに改行
+				bw.write(key + "," + branchNames.get(key) + "," + saleAmount);
 				//改行
 				bw.newLine();
 			}
-			//出力されるファイルはBRANCH_OUTのみなので、for文の後に書き込みを停止
+			//BRANCH_OUTファイルにすべて出力するので、for文の後に書き込みを停止
 			bw.close();
 		}catch(IOException e) {
 				System.out.println(UNKNOWN_ERROR);
