@@ -9,6 +9,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+//Collectionsをimportした
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,11 @@ public class CalculateSales {
 	private static final String UNKNOWN_ERROR = "予期せぬエラーが発生しました";
 	private static final String FILE_NOT_EXIST = "支店定義ファイルが存在しません";
 	private static final String FILE_INVALID_FORMAT = "支店定義ファイルのフォーマットが不正です";
+	//エラーメッセージを追加
+	private static final String FILE_NOT_CONTINUITY = "売上ファイル名が連番になっていません";
+	private static final String FILESIZE_INVALID_FORMAT =  "のフォーマットが不正です";
+	private static final String CODE_INVALID_FORMAT =  "の支店コードが不正です";
+	private static final String OVER_DIGIT_ERROR = "合計金額が10桁を越えました";
 
 	/**
 	 * メインメソッド
@@ -58,24 +65,32 @@ public class CalculateSales {
 		//ファイル名のチェック機能（「数字8桁.rcd」になっているか）
 		//filesは配列なので「.size」ではなく「.length」
 		for(int i = 0; i < files.length; i++) {
+
+			//ファイル判定を行う（ディレクトリでないことを確認）
+			//if(ファイルの情報.isFile() && ファイル名.matches(正規表現構文)){
+			//getNameはファイルとディレクトリどちらも取得可能だが、今回は「ファイル名」でチェックしたいから。
 			//正規表現式を参照
-			if(files[i].getName().matches("^[0-9]{8}[.]rcd$" )) {
+			if(files[i].isFile() && files[i].getName().matches("^[0-9]{8}[.]rcd$" )) {
 				rcdFiles.add(files[i]);
 			}
 		}
 
 		//エラー処理2-1
-		for(int j = 0; j < rcdFiles.size() - 1; j++) {
-			int former = Integer.parseInt(rcdFiles.get(j).getName().substring(0, 8));
-			int latter = Integer.parseInt(rcdFiles.get(j + 1).getName().substring(0, 8));
+		//OS問わず正常に動作させるためにソートをかける
+		Collections.sort(rcdFiles);
+
+		for(int i = 0; i < rcdFiles.size() - 1; i++) {
+			int former = Integer.parseInt(rcdFiles.get(i).getName().substring(0, 8));
+			int latter = Integer.parseInt(rcdFiles.get(i + 1).getName().substring(0, 8));
 			if((latter - former) != 1) {
-				System.out.println("売上ファイル名が連番になっていません");
+				System.out.println(FILE_NOT_CONTINUITY);
 				return;
 			}
 		}
 
 		//BufferedReaderの初期化
 		BufferedReader br = null;
+
 
 		//rcdFilesの要素の読込機能
 		//rcdFilesはListなので「.length」ではなく「.size」
@@ -97,13 +112,19 @@ public class CalculateSales {
 					storeSale.add(line);
 				}
 
-				//エラー処理2-4
+				//エラー処理2-4(storeSale全体のエラー = 先に処理する)
 				if(storeSale.size() != 2) {
-					System.out.println(rcdFiles.get(i).getName() + "のフォーマットが不正です");
+					System.out.println(rcdFiles.get(i).getName() + FILESIZE_INVALID_FORMAT);
 					return;
 				}
 
-				//エラー処理3-2
+				//エラー処理2-3(storeSaleの内容のエラー)
+				if(!branchSales.containsKey(storeSale.get(0))){
+					System.out.println(rcdFiles.get(i).getName() + CODE_INVALID_FORMAT);
+					return;
+				}
+
+				//エラー処理3-2(storeSaleの内容のエラー)
 				if(!storeSale.get(1).matches("^[0-9]*$")) {
 					System.out.println(UNKNOWN_ERROR);
 					return;
@@ -112,12 +133,6 @@ public class CalculateSales {
 				//String型の売上金額をLong型に変換
 				long fileSale = Long.parseLong(storeSale.get(1));
 
-				//エラー処理2-3
-				if(!branchSales.containsKey(storeSale.get(0))){
-					System.out.println(rcdFiles.get(i).getName() + "の支店コードが不正です");
-					return;
-				}
-
 				//branchSalesに保持されている売上金額に合計する
 				//合計を保存するためのsaleAmountを作成し、計算式を代入
 				//branchSales.get(storeSale.get(0))は、storeSale.get(0)で得た支店コードをbranchSalesのkeyとして使用している
@@ -125,7 +140,7 @@ public class CalculateSales {
 
 				//エラー処理2-2
 				if(saleAmount >= 10000000000L) {
-					System.out.println("合計金額が10桁を越えました");
+					System.out.println(OVER_DIGIT_ERROR);
 					return;
 				}
 				//storeSaleで得た支店コード(key)に紐づくvalueを更新する
@@ -169,6 +184,11 @@ public class CalculateSales {
 		BufferedReader br = null;
 		File file = new File(path, fileName);
 
+		//エラー処理1-1
+		if(!file.exists()) {
+			System.out.println(FILE_NOT_EXIST);
+		}
+
 		try {
 			FileReader fr = new FileReader(file);
 			br = new BufferedReader(fr);
@@ -184,20 +204,14 @@ public class CalculateSales {
 				if((items.length != 2) || (!items[0].matches("^[0-9]{3}$"))) {
 					System.out.println(FILE_INVALID_FORMAT);
 					return false;
-				} else {
-					branchNames.put(items[0], items[1]);
-					branchSales.put(items[0], 0L);
 				}
+
+				branchNames.put(items[0], items[1]);
+				branchSales.put(items[0], 0L);
 			}
 
 		} catch(IOException e) {
-
-			//エラー処理1-1
-			if(!file.exists()) {
-				System.out.println(FILE_NOT_EXIST);
-			} else {
 			System.out.println(UNKNOWN_ERROR);
-			}
 			return false;
 
 		} finally {
