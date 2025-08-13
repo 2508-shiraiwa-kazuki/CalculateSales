@@ -187,6 +187,7 @@ public class CalculateSales {
 		//エラー処理1-1
 		if(!file.exists()) {
 			System.out.println(FILE_NOT_EXIST);
+			return false;
 		}
 
 		try {
