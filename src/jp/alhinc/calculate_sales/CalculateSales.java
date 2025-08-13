@@ -168,12 +168,7 @@ public class CalculateSales {
 				Long commoditySaleAmount = commoditySales.get(storeSale.get(1)) + fileSale;
 
 				//エラー処理2-2
-				if(branchSaleAmount >= 10000000000L) {
-					System.out.println(OVER_DIGIT_ERROR);
-					return;
-				}
-
-				if(commoditySaleAmount >= 10000000000L) {
+				if((branchSaleAmount >= 10000000000L) || (commoditySaleAmount >= 10000000000L)) {
 					System.out.println(OVER_DIGIT_ERROR);
 					return;
 				}
